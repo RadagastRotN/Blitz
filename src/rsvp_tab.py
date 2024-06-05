@@ -1,10 +1,10 @@
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout
 
-from sources.chunkers import BasicChunker
-from sources.input_formats import TextFile
-from utils import to_readable_time
+from .config import Config
+from chunkers.chunkers import BasicChunker
+from .sources import open_source
+from .utils import to_readable_time
 
 
 class RSVPTab(QWidget):
@@ -13,7 +13,7 @@ class RSVPTab(QWidget):
         super().__init__()
         self.parent_window = parent_window
 
-        self.source = BasicChunker(TextFile(source))
+        self.source = BasicChunker(open_source(source))
         self.chunk = 0
 
         self.chunk_label = QLabel('', self)
@@ -21,6 +21,8 @@ class RSVPTab(QWidget):
 
         self.stats_label = QLabel('WPM:   Text length: \nEstimated time:   Interval: ', self)
         self.stats_label.setAlignment(Qt.AlignTop)
+        # Set background color
+        self.setAutoFillBackground(True)
 
         # Use a layout to center the label in the window
         self.layout = QVBoxLayout(self)
@@ -30,10 +32,12 @@ class RSVPTab(QWidget):
         self.setLayout(self.layout)
 
         # Create a label and set its properties
-        font = QFont('Arial', 50, QFont.Bold)
-        self.chunk_label.setFont(font)
+        self.chunk_label.setFont(Config().get_font())
 
         self.update_stats()
+
+    def activate(self):
+        self.chunk_label.setFont(Config().get_font())
 
     def toggle_text(self):
         try:
