@@ -1,17 +1,25 @@
-from .chunker import Chunker
+from .source import Source
 
 from email import policy
 from email.parser import BytesParser
 
 
-class TextFile(Chunker):
+def open_source(filename):
+    if filename.endswith('.eml'):
+        cls = EmlFile
+    else:
+        cls = TextFile
+    return cls(filename)
+
+
+class TextFile(Source):
 
     def read_source(self, filename):
         with open(filename) as infile:
             return sum((line.split() for line in infile), [])
 
 
-class EmlFile(Chunker):
+class EmlFile(Source):
     def read_source(self, filename):
         with open(filename, 'rb') as f:
             msg = BytesParser(policy=policy.default).parse(f)
