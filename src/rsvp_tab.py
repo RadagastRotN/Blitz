@@ -2,7 +2,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout
 
 from .config import Config
-from chunkers.chunkers import BasicChunker
+from .chunkers import BasicChunker
 from .sources import open_source
 from .utils import to_readable_time
 
