@@ -14,26 +14,25 @@ def open_source(filename):
 
 class TextFile(Source):
 
-    def read_source(self, filename):
-        with open(filename) as infile:
-            return sum((line.split() for line in infile), [])
+    def read_source(self):
+        with open(self.path) as infile:
+            for line in infile:
+                yield from line.split()
+                yield ""
 
 
 class EmlFile(Source):
-    def read_source(self, filename):
-        with open(filename, 'rb') as f:
-            msg = BytesParser(policy=policy.default).parse(f)
 
-        text = []
+    def read_source(self):
+        with open(self.path, 'rb') as infile:
+            msg = BytesParser(policy=policy.default).parse(infile)
 
         # Get the email body
         if msg.is_multipart():
             for part in msg.walk():
                 # Get the plain text part
                 if part.get_content_type() in ['text/plain', 'text/html']:
-                    text += [part.get_payload(decode=True).decode(part.get_content_charset())]
+                    yield from part.get_payload(decode=True).decode(part.get_content_charset()).split()
         else:
             # If the email is not multipart, just get the payload
-            text = [msg.get_payload(decode=True).decode(msg.get_content_charset())]
-
-        return sum((line.split() for line in text), [])
+            yield from msg.get_payload(decode=True).decode(msg.get_content_charset()).split()

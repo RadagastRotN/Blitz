@@ -41,15 +41,16 @@ class RSVPTab(QWidget):
 
     def toggle_text(self):
         try:
-            self.chunk_label.setText(self.source.get_chunk(self.chunk))
+            if self.source[self.chunk]:
+                self.chunk_label.setText(self.source[self.chunk])
             self.chunk += 1
         except IndexError:
             self.parent_window.toggle()
             self.chunk = 0
 
     def _get_stats(self):
-        return self.parent_window.wpm, self.source.words_count, \
-               to_readable_time(self.source.words_count / self.parent_window.wpm)
+        return self.parent_window.wpm, self.source.tokens_count, \
+               to_readable_time(self.source.tokens_count / self.parent_window.wpm)
 
     def update_stats(self):
         self.stats_label.setText("WPM: {:d}  Text length: {:d}\nEstimated time: {}".format(*self._get_stats()))

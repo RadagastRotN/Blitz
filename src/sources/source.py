@@ -1,23 +1,26 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 
 
 class Source(ABC):
 
     def __init__(self, path):
-        self.tokens = self.read_source(path)
-        self.words_count = len(self.tokens)
-        self.sanitize()
+        self.path = path
+        self.tokens_count = sum(1 for _ in self.read_source())
 
-    def get_chunk(self, ind):
-        return " ".join(self.tokens[ind])
+    def __len__(self):
+        return self.tokens_count
 
-    def get_average_len(self):
-        if self.words_count and self.tokens:
-            return self.words_count / len(self.tokens)
+    def __iter__(self):
+        for token in self.read_source():
+            yield self.sanitize(token)
+
+    @abstractmethod
+    def read_source(self):
+        pass
+
+    @staticmethod
+    def sanitize(token):
+        if len(token) > 30:
+            return "{}...{}".format(token[:6], token[-6:])
         else:
-            return 1
-
-    def sanitize(self):
-        for ind, token in enumerate(self.tokens):
-            if len(token) > 30:
-                self.tokens[ind] = "{}...{}".format(token[:6], token[-6:])
+            return token

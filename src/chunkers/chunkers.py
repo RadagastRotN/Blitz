@@ -5,37 +5,28 @@ class Chunker(ABC):
 
     def __init__(self, source, *args, **kwargs):
         self.source = source
-        self.chunks = []
+        self.chunks = list(self.gen_chunks(*args, **kwargs))
+        if not self.chunks:
+            self.chunks = ["<this file is empty>"]
+        self.average_len = self.source.tokens_count / len(self.chunks) if self.source.tokens_count else 1
+        self.tokens_count = source.tokens_count
 
-    def get_chunk(self, ind):
-        return " ".join(self.chunks[ind])
+    def __getitem__(self, item):
+        return self.chunks[item]
 
-    def get_average_len(self):
-        if self.words_count and self.chunks:
-            return self.words_count / len(self.chunks)
-        else:
-            return 1
-
-    def sanitize(self):
-        for ind, chunk in enumerate(self.chunks):
-            if len(chunk) > 30:
-                self.chunks[ind] = "{}...{}".format(chunk[:6], chunk[-6:])
+    def __len__(self):
+        return len(self.chunks)
 
 
 class BasicChunker(Chunker):
 
-    def __init__(self, source, size=2):
-        super().__init__(source)
-        self.size = size
+    def gen_chunks(self, size=2):
         chunk = []
-        for token in self.source.tokens:
-            chunk += [token]
-            if len(chunk) == self.size or chunk[-1][-1] in '.?!':
-                self.chunks += [chunk]
-                chunk = []
+        for token in self.source:
+            if token:
+                chunk += [token]
+            if len(chunk) == size or not token or token[-1] in '.?!':
+                yield " ".join(chunk)
+                chunk.clear()
         if chunk:
-            self.chunks += [chunk]
-
-        self.words_count = source.words_count
-        if not self.chunks:
-            self.chunks = ["<this file is empty>"]
+            yield " ".join(chunk)

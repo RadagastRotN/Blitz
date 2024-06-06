@@ -1,10 +1,11 @@
-import os
 import sys
-from PySide6.QtWidgets import QApplication, QWidget, QTabWidget, QMainWindow, QPushButton, \
-    QFileDialog
-from PySide6.QtGui import QColor, QPalette
+from pathlib import Path
+
+from PySide6.QtWidgets import QApplication, QWidget, QTabWidget, QMainWindow, QFileDialog
+from PySide6.QtGui import QPalette
 from PySide6.QtCore import Qt, QTimer
 
+from utils import alert
 from .config import Config, ConfigTab
 from .rsvp_tab import RSVPTab
 
@@ -68,7 +69,7 @@ class MainWindow(QMainWindow):
             self._update_timer()
 
     def _update_timer(self):
-        cpm = self._wpm / self.tabs.currentWidget().source.get_average_len()
+        cpm = self._wpm / self.tabs.currentWidget().source.average_len
         self.interval = 60000 / cpm
         self.tabs.currentWidget().update_stats()
         if self.timer.isActive():
@@ -97,13 +98,25 @@ class MainWindow(QMainWindow):
     def open_file_dialog(self):
         tabs_count = self.tabs.count()
         file_names, _ = QFileDialog.getOpenFileNames(self, 'Open File(s)')
-        if not file_names:
-            self.tabs.setCurrentIndex(0 if tabs_count == 2 else tabs_count - 1)
-            print(0 if tabs_count == 2 else tabs_count - 1)
-        else:
-            for file_name in file_names:
-                self.tabs.addTab(RSVPTab(file_name, self), os.path.split(file_name)[-1])
+        opened = 0
+        for filename in file_names:
+            try:
+                self.tabs.addTab(RSVPTab(filename, self), self._fname_to_tab_caption(filename))
+                opened += 1
+            except (FileNotFoundError, UnicodeDecodeError) as ex:
+                alert(f"Couldn't open file {filename}:\n{ex}", "Error")
+        if opened:
             self.tabs.setCurrentIndex(tabs_count)
+        else:
+            self.tabs.setCurrentIndex(0 if tabs_count == 2 else tabs_count - 1)
+
+    @staticmethod
+    def _fname_to_tab_caption(filename):
+        filename = Path(filename).name
+        if len(filename) > 25:
+            return f"{filename[:11]}...{filename[-11:]}"
+        else:
+            return filename
 
     def set_bg_color(self):
         # Set background color
