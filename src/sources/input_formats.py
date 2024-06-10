@@ -27,12 +27,19 @@ class EmlFile(Source):
         with open(self.path, 'rb') as infile:
             msg = BytesParser(policy=policy.default).parse(infile)
 
-        # Get the email body
-        if msg.is_multipart():
-            for part in msg.walk():
-                # Get the plain text part
-                if part.get_content_type() in ['text/plain', 'text/html']:
-                    yield from part.get_payload(decode=True).decode(part.get_content_charset()).split()
-        else:
-            # If the email is not multipart, just get the payload
-            yield from msg.get_payload(decode=True).decode(msg.get_content_charset()).split()
+        def read_msg_part(part):
+            if part.get_content_type() in ['multipart/related', 'multipart/mixed']:
+                for subpart in part.iter_parts():
+                    if subpart.get_content_maintype() in ('multipart', 'text'):
+                        yield from read_msg_part(subpart)
+            elif part.get_content_type() == 'multipart/alternative':
+                subparts = list(part.iter_parts())
+                types = [subpart.get_content_type() for subpart in subparts]
+                for preferred_type in ('text/plain', 'text/html'):
+                    if preferred_type in types:
+                        yield from read_msg_part(subparts[types.index(preferred_type)])
+                        break
+            else:
+                yield from part.get_payload(decode=True).decode(part.get_content_charset() or "utf-8").split()
+
+        yield from read_msg_part(msg)
