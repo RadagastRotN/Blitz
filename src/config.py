@@ -71,9 +71,7 @@ class Config:
         return QColor(self._bg_color)
 
     @staticmethod
-    def read_config(filename=None):
-        if filename is None:
-            filename = ROOT_DIR / 'config.yml'
+    def read_config(filename=ROOT_DIR / 'config.yml'):
         with open(filename) as config_file:
             return yaml.safe_load(config_file)
 

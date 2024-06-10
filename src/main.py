@@ -1,17 +1,19 @@
 import sys
+from datetime import datetime
 from pathlib import Path
 
 from PySide6.QtWidgets import QApplication, QWidget, QTabWidget, QMainWindow, QFileDialog
-from PySide6.QtGui import QPalette
+from PySide6.QtGui import QPalette, QClipboard
 from PySide6.QtCore import Qt, QTimer
 
-from utils import alert
+from utils import alert, TEMP_DIR
 from .config import Config, ConfigTab
 from .rsvp_tab import RSVPTab
 
 config = Config()
 
 OPEN_TAB_CAPTION = "OPEN FILE"
+CLIPBOARD_TAB_CAPTION = "FROM CLIPBOARD"
 
 
 class MainWindow(QMainWindow):
@@ -31,9 +33,12 @@ class MainWindow(QMainWindow):
 
         self.open_button = QWidget()
         self.open_button.setAutoFillBackground(True)
+        self.clipboard_button = QWidget()
+        self.clipboard_button.setAutoFillBackground(True)
 
         tabs.addTab(ConfigTab(self), "CONFIG")
         tabs.addTab(self.open_button, OPEN_TAB_CAPTION)
+        tabs.addTab(self.clipboard_button, CLIPBOARD_TAB_CAPTION)
 
         tabs.currentChanged.connect(self.on_current_changed)
 
@@ -52,9 +57,23 @@ class MainWindow(QMainWindow):
 
         if self.tabs.tabText(index) == OPEN_TAB_CAPTION:
             self.open_file_dialog()
+        elif self.tabs.tabText(index) == CLIPBOARD_TAB_CAPTION:
+            self.paste_clipboard()
         elif type(self.tabs.currentWidget()) == RSVPTab:
             self.tabs.currentWidget().activate()
             self._update_timer()
+
+    def paste_clipboard(self):
+        text = QClipboard().text()
+        if text:
+            filename = TEMP_DIR / str(datetime.now().timestamp())
+            with open(filename, 'w') as tmp_file:
+                tmp_file.write(text)
+            self.tabs.addTab(RSVPTab(filename, self), "from clipboard")
+            self.tabs.setCurrentIndex(self.tabs.count() - 1)
+        else:
+            self.tabs.setCurrentIndex(0)
+            alert("Clipboard does not contain text", "Notice")
 
     @property
     def wpm(self):

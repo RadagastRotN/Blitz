@@ -1,9 +1,11 @@
+import tempfile
 from datetime import timedelta
 from pathlib import Path
 
 from PySide6.QtWidgets import QMessageBox
 
 ROOT_DIR = Path(__file__).parent.parent
+TEMP_DIR = Path(tempfile.gettempdir())
 
 
 def to_readable_time(minutes):

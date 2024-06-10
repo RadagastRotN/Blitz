@@ -12,6 +12,8 @@ class RSVPTab(QWidget):
     def __init__(self, source, parent_window):
         super().__init__()
         self.parent_window = parent_window
+        if type(source) != str:
+            source = str(source)
 
         self.source = BasicChunker(open_source(source))
         self.chunk = 0
